@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zoey's Learning Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { font-family: 'Nunito', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .bounce-in { animation: bounceIn 0.5s ease-out; }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .btn-shadow {
+            box-shadow: 0 6px 0 rgb(0,0,0,0.15);
+            transition: all 0.1s;
+        }
+        .btn-shadow:active {
+            box-shadow: 0 0px 0 rgb(0,0,0,0.15);
+            transform: translateY(6px) scale(0.98);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex justify-center overflow-hidden">
+
+    <div id="app" class="w-full max-w-[450px] h-screen relative bg-[#FFF5F8] transition-colors duration-500 overflow-y-auto">
+        <!-- Content will be loaded here -->
+    </div>
+
+    <script>
+        // --- DATA & ASSETS ---
+        const ALPHABETS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+        
+        const AUDIO_ASSETS = {
+            correct: "audio/UI/correct.mp3",
+            wrong: "audio/UI/wrong.mp3",
+            fanfare: "audio/UI/victory.mp3"
+        };
+
+        const MG1_DATA = {
+            animals: [
+                // Hewan
+                { emoji: '🐶', name: 'Dog' }, { emoji: '🐱', name: 'Cat' }, { emoji: '🐭', name: 'Mouse' },
+                { emoji: '🐹', name: 'Hamster' }, { emoji: '🐰', name: 'Rabbit' }, { emoji: '🐻', name: 'Bear' }, 
+				{ emoji: '🐼', name: 'Panda' }, { emoji: '🐨', name: 'Koala' }, { emoji: '🐯', name: 'Tiger' }, 
+				{ emoji: '🦁', name: 'Lion' }, { emoji: '🐮', name: 'Cow' }, { emoji: '🐷', name: 'Pig' },
+				{ emoji: '🐸', name: 'Frog' }, { emoji: '🐵', name: 'Monkey' }, { emoji: '🐔', name: 'Chicken' },
+				{ emoji: '🐧', name: 'Pinguin' }, { emoji: '🐦', name: 'Bird' }, { emoji: '🦆', name: 'Duck' },
+				{ emoji: '🦅', name: 'Eagle' }, { emoji: '🦉', name: 'Owl' }, { emoji: '🦇', name: 'Bat' },
+				{ emoji: '🐺', name: 'Wolf' }, { emoji: '🐴', name: 'Horse' }, { emoji: '🦄', name: 'Unicorn' },
+				{ emoji: '🐝', name: 'Bee' },  { emoji: '🐛', name: 'Caterpillar' }, { emoji: '🦋', name: 'Butterfly' },
+                { emoji: '🐌', name: 'Snail' }, { emoji: '🐞', name: 'Lady Bug' }, { emoji: '🐜', name: 'Ant' },
+                { emoji: '🦟', name: 'Mosquito' }, { emoji: '🦗', name: 'Cricket' }, { emoji: '🕷', name: 'Spider' },
+                { emoji: '🦂', name: 'Scorpion' }, { emoji: '🐢', name: 'Turtle' }, { emoji: '🐍', name: 'Snake' },
+                { emoji: '🦎', name: 'Lizard' }, { emoji: '🐙', name: 'Octopus' }, { emoji: '🦑', name: 'Squid' }, 
+                { emoji: '🦐', name: 'Shrimp' }, { emoji: '🦞', name: 'Lobster' }, { emoji: '🦀', name: 'Crab' },
+                { emoji: '🐡', name: 'Blowfish' }, { emoji: '🐟', name: 'Fish' }, { emoji: '🐬', name: 'Dolphin' },
+				{ emoji: '🐳', name: 'Whale' }, { emoji: '🦈', name: 'Shark' }, { emoji: '🐊', name: 'Crocodile' },
+				{ emoji: '🦓', name: 'Zebra' }, { emoji: '🦍', name: 'Gorilla' }, { emoji: '🦧', name: 'Orangutan' },
+                { emoji: '🐘', name: 'Elephant' }, { emoji: '🦛', name: 'Hippopotamus' }, { emoji: '🦏', name: 'Rhinoceros' }, 
+                { emoji: '🐫', name: 'Camel' }, { emoji: '🦒', name: 'Giraffe' }, { emoji: '🦘', name: 'Kangaroo' },
+                { emoji: '🐑', name: 'Sheep' }, { emoji: '🐐', name: 'Goat' }, { emoji: '🦌', name: 'Deer' },
+                { emoji: '🦢', name: 'Swan' }, { emoji: '🦩', name: 'Flamingo' }, { emoji: '🦝', name: 'Racoon' }, 
+                { emoji: '🦥', name: 'Sloth' }, { emoji: '🐀', name: 'Rat' }, { emoji: '🐿', name: 'Chipmunk' },
+                { emoji: '🦔', name: 'Hedgehog' }, { emoji: '🐉', name: 'Dragon' }],
+            fruits: [
+                { emoji: '🍎', name: 'Apple' }, { emoji: '🍐', name: 'Pear' }, { emoji: '🍊', name: 'Orange' },
+                { emoji: '🍋', name: 'Lemon' }, { emoji: '🍌', name: 'Banana' }, { emoji: '🍉', name: 'Watermelon' },
+				{ emoji: '🍇', name: 'Grapes' }, { emoji: '🍓', name: 'Strawberry' }, { emoji: '🍈', name: 'Melon' }, 
+				{ emoji: '🍒', name: 'Cherry' }, { emoji: '🍑', name: 'Peach' }, { emoji: '🥭', name: 'Mango' }, 
+				{ emoji: '🍍', name: 'Pineapple' }, { emoji: '🥥', name: 'Coconut' }, { emoji: '🍅', name: 'Tomato' }, 
+                { emoji: '🍆', name: 'Eggplant' }, { emoji: '🥑', name: 'Avocado' }, { emoji: '🥦', name: 'Broccoli' },
+                { emoji: '🥒', name: 'Cucumber' }, { emoji: '🌽', name: 'Corn' }, { emoji: '🥕', name: 'Carrot' }, 
+                { emoji: '🧄', name: 'Garlic' }, { emoji: '🧅', name: 'Onion' }, { emoji: '🥔', name: 'Potato' },
+				{ emoji: '🥜', name: 'Peanut' }, { emoji: '🍄‍', name: 'Mushroom' }],
+            colors: [
+                { emoji: '🔴', name: 'Red' }, { emoji: '🔵', name: 'Blue' }, { emoji: '🟡', name: 'Yellow' }, 
+                { emoji: '⚫️', name: 'Black' }, { emoji: '⚪️', name: 'White' }, { emoji: '🟤', name: 'Brown' }, 
+                { emoji: '🟢', name: 'Green' }, { emoji: '🟠', name: 'Orange' }, { emoji: '🟣', name: 'Purple' }],
+            transport: [
+				{ emoji: '🚗', name: 'Car' }, { emoji: '🚌', name: 'Bus' }, { emoji: '🚂', name: 'Train' },
+				{ emoji: '✈️', name: 'Airplane' }, { emoji: '🚁', name: 'Helicopter' }, { emoji: '🚢', name: 'Ship' },
+				{ emoji: '🚀', name: 'Rocket' }, { emoji: '🚲', name: 'Bicycle' }]
+        };
+
+        const MG2_DATA = [
+            { emoji: '🐬', name: 'Dolphin', riddle: "I have gray skin and live in the ocean. Who am I?" },
+            { emoji: '🐘', name: 'Elephant', riddle: "I am big and have a long trunk. Who am I?" },
+            { emoji: '🦒', name: 'Giraffe', riddle: "I am tall with a long neck. Who am I?" },
+            { emoji: '🦁', name: 'Lion', riddle: "I am the king of the jungle. Who am I?" },
+            { emoji: '🐒', name: 'Monkey', riddle: "I love bananas and swinging from trees. Who am I?" },
+            { emoji: '🐢', name: 'Turtle', riddle: "I am very slow and have a hard shell. Who am I?" },
+            { emoji: '🐝', name: 'Bee', riddle: "I am small, yellow and black, and make honey. Who am I?" },
+            { emoji: '🦉', name: 'Owl', riddle: "I stay awake at night and say hoot. Who am I?" }
+        ];
+
+        const MG3_DATA = [
+            { emoji: '👁️', name: 'Eye' }, { emoji: '👂', name: 'Ear' },
+            { emoji: '👃', name: 'Nose' }, { emoji: '👄', name: 'Mouth' },
+            { emoji: '🖐️', name: 'Hand' }, { emoji: '🦶', name: 'Foot' },
+            { emoji: '🦵', name: 'Leg' }, { emoji: '💪', name: 'Arm' },
+            { emoji: '🦷', name: 'Tooth' }, { emoji: '👅', name: 'Tongue' },
+            { emoji: '🧑', name: 'Head' }, { emoji: '💇', name: 'Hair' }
+        ];
+
+        const MG4_DATA = [
+            { emoji: '🐶', name: 'Dog', sound: 'audio/animals/dog.mp3' },
+            { emoji: '🐱', name: 'Cat', sound: 'audio/animals/cat.mp3' },
+            { emoji: '🦁', name: 'Lion', sound: 'audio/animals/lion.mp3' },
+            { emoji: '🐮', name: 'Cow', sound: 'audio/animals/cow.mp3' },
+            { emoji: '🐔', name: 'Chicken', sound: 'audio/animals/chicken.mp3' },
+            { emoji: '🐘', name: 'Elephant', sound: 'audio/animals/elephant.mp3' },
+            { emoji: '🦆', name: 'Duck', sound: 'audio/animals/duck.mp3' },
+            { emoji: '🐵', name: 'Monkey', sound: 'audio/animals/monkey.mp3' },
+			{ emoji: '🐸', name: 'Frog', sound: 'audio/animals/frog.mp3' },
+			{ emoji: '🐷', name: 'Pig', sound: 'audio/animals/pig.mp3' },
+			{ emoji: '🐦', name: 'Bird', sound: 'audio/animals/birds.mp3' },
+			{ emoji: '🐴', name: 'Horse', sound: 'audio/animals/horse.mp3' },
+			{ emoji: '🐝', name: 'Bee', sound: 'audio/animals/bee.mp3' },
+			{ emoji: '🦉', name: 'Owl', sound: 'audio/animals/owl.mp3' },
+			{ emoji: '🐑', name: 'Sheep', sound: 'audio/animals/sheep.mp3' },
+			{ emoji: '🐭', name: 'Mouse', sound: 'audio/animals/mouse.mp3' },
+			{ emoji: '🦗', name: 'Cricket', sound: 'audio/animals/crickets.mp3' },
+			{ emoji: '🐍', name: 'Snake', sound: 'audio/animals/snake.mp3' },
+			{ emoji: '🐊', name: 'Cow', sound: 'audio/animals/crocodile.mp3' },
+			{ emoji: '🐬', name: 'Dolphin', sound: 'audio/animals/dolphin.mp3' },
+			{ emoji: '🐐', name: 'Goat', sound: 'audio/animals/goat.mp3' },
+			{ emoji: '🦅', name: 'Eagle', sound: 'audio/animals/eagle.mp3' },
+			{ emoji: '🦢', name: 'Swan', sound: 'audio/animals/swan.mp3' },
+			{ emoji: '🦍', name: 'Gorilla', sound: 'audio/animals/gorilla.mp3' },
+			{ emoji: '🐧', name: 'Pinguin', sound: 'audio/animals/pinguin.mp3' },
+			{ emoji: '🐰', name: 'Rabbit', sound: 'audio/animals/rabbit.mp3' },
+			{ emoji: '🐓', name: 'Rooster', sound: 'audio/animals/rooster.mp3' },
+			{ emoji: '🐺', name: 'Wolf', sound: 'audio/animals/wolf.mp3' },
+        ];
+
+        // --- STATE MANAGEMENT ---
+        let state = {
+            view: 'menu',
+            gameId: null,
+            category: null,
+            round: 1,
+            score: 0,
+            currentQuiz: null,
+            feedback: null
+        };
+
+        const MAX_ROUNDS = 10;
+
+        // --- CORE FUNCTIONS ---
+        function playAudio(url) {
+            const audio = new Audio(url);
+            audio.play().catch(e => console.log("Audio blocked", e));
+        }
+
+        function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+        function render() {
+            const container = document.getElementById('app');
+            let html = '';
+
+            if (state.feedback?.type === 'wrong') {
+                container.style.backgroundColor = '#ef4444';
+            } else {
+                container.style.backgroundColor = '#FFF5F8';
+            }
+
+            switch(state.view) {
+                case 'menu':
+                    html = `
+                        <div class="flex flex-col items-center justify-center min-h-full p-6 space-y-6 bg-gradient-to-b from-purple-200 to-pink-200">
+                            <div class="text-center mb-4">
+                                <h1 class="text-5xl font-black text-purple-600 drop-shadow-md mb-2">Zoey's Quiz</h1>
+                                <p class="text-xl font-bold text-pink-500">Learn & Play! 🎈</p>
+                            </div>
+                            <div class="w-full space-y-3 flex flex-col">
+                                <button onclick="setCategoryMenu()" class="btn-shadow bg-yellow-300 text-orange-700 font-black py-4 px-6 rounded-3xl text-lg text-left">🔤 Game 1: First Letter</button>
+                                <button onclick="startGame(2)" class="btn-shadow bg-blue-300 text-blue-800 font-black py-4 px-6 rounded-3xl text-lg text-left">🐘 Game 2: Animal Riddles</button>
+                                <button onclick="startGame(3)" class="btn-shadow bg-green-300 text-green-800 font-black py-4 px-6 rounded-3xl text-lg text-left">👀 Game 3: Body Parts</button>
+                                <button onclick="startGame(4)" class="btn-shadow bg-teal-300 text-teal-900 font-black py-4 px-6 rounded-3xl text-lg text-left">🎵 Game 4: Animal Sounds</button>
+                            </div>
+                        </div>`;
+                    break;
+
+                case 'category_select':
+                    html = `
+                        <div class="flex flex-col items-center justify-center min-h-full p-6 space-y-6 bg-gradient-to-b from-yellow-100 to-orange-100">
+                            <h2 class="text-3xl font-black text-orange-600 mb-4 text-center">Select Category</h2>
+                            <div class="grid grid-cols-2 gap-4 w-full">
+                                <button onclick="startGame(1, 'animals')" class="btn-shadow bg-orange-300 p-4 rounded-3xl flex flex-col items-center font-bold"><span class="text-4xl mb-2">🐶</span> Animals</button>
+                                <button onclick="startGame(1, 'fruits')" class="btn-shadow bg-red-300 p-4 rounded-3xl flex flex-col items-center font-bold"><span class="text-4xl mb-2">🍎</span> Fruits</button>
+                                <button onclick="startGame(1, 'colors')" class="btn-shadow bg-blue-300 p-4 rounded-3xl flex flex-col items-center font-bold"><span class="text-4xl mb-2">🎨</span> Colors</button>
+                                <button onclick="startGame(1, 'transport')" class="btn-shadow bg-gray-300 p-4 rounded-3xl flex flex-col items-center font-bold"><span class="text-4xl mb-2">🚗</span> Vehicles</button>
+                            </div>
+                            <button onclick="changeView('menu')" class="mt-8 font-bold text-gray-500">⬅️ Back to Menu</button>
+                        </div>`;
+                    break;
+
+                case 'playing':
+                    html = `
+                        <div class="flex flex-col min-h-full p-4">
+                            <div class="flex justify-between items-center mb-6">
+                                <button onclick="changeView('menu')" class="text-xl p-2 bg-white rounded-full shadow-sm">🏠</button>
+                                <div class="bg-white px-3 py-1 rounded-full font-bold shadow-sm text-sm">Round: <span class="text-purple-600">${state.round}/${MAX_ROUNDS}</span></div>
+                                <div class="bg-white px-3 py-1 rounded-full font-bold shadow-sm text-sm">⭐ <span class="text-yellow-500">${state.score}</span></div>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center justify-center">
+                                ${renderQuiz()}
+                            </div>
+                        </div>`;
+                    break;
+
+                case 'result':
+                    html = `
+                        <div class="flex flex-col items-center justify-center min-h-full p-6 space-y-8 bg-gradient-to-b from-blue-200 to-purple-200 text-center">
+                            <div class="text-[100px] bounce-in">${state.score === MAX_ROUNDS ? '🏆' : '⭐'}</div>
+                            <h2 class="text-4xl font-black text-blue-600">${state.score === MAX_ROUNDS ? 'PERFECT!' : 'GREAT JOB!'}</h2>
+                            <div class="bg-white px-10 py-6 rounded-3xl shadow-xl">
+                                <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Your Score</p>
+                                <p class="text-6xl font-black text-purple-600">${state.score} / ${MAX_ROUNDS}</p>
+                            </div>
+                            <div class="w-full space-y-3">
+                                <button onclick="startGame(${state.gameId}, '${state.category}')" class="btn-shadow bg-green-400 text-white w-full py-4 rounded-3xl text-xl font-black">🔄 Play Again</button>
+                                <button onclick="changeView('menu')" class="btn-shadow bg-pink-400 text-white w-full py-4 rounded-3xl text-lg font-black">🏠 Main Menu</button>
+                            </div>
+                        </div>`;
+                    break;
+            }
+
+            if (state.feedback) {
+                html += `
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <div class="bg-white p-8 rounded-[3rem] shadow-2xl mx-6 flex flex-col items-center text-center ${state.feedback.type === 'correct' ? 'bounce-in' : 'shake'}">
+                        <span class="text-6xl mb-4">${state.feedback.type === 'correct' ? '🎉' : '😢'}</span>
+                        <h2 class="text-3xl font-black mb-2 ${state.feedback.type === 'correct' ? 'text-green-500' : 'text-red-500'}">${state.feedback.msg}</h2>
+                        <p class="text-xl font-bold text-gray-600">It is a <span class="text-purple-500 uppercase">${state.feedback.answer}</span>!</p>
+                    </div>
+                </div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderQuiz() {
+            if (!state.currentQuiz) {
+                return `<button onclick="generateQuiz()" class="btn-shadow bg-purple-400 text-white font-black text-xl px-12 py-8 rounded-3xl animate-bounce">🎁 OPEN QUESTION</button>`;
+            }
+
+            const q = state.currentQuiz;
+            let content = '';
+
+            if (q.type === 1) {
+                content = `
+                    <div class="text-8xl mb-4 drop-shadow-xl bounce-in">${q.answerObj.emoji}</div>
+                    <h3 class="text-xl font-black text-gray-700 mb-6">What is the first letter?</h3>
+                    <div class="grid grid-cols-2 gap-3 w-full">
+                        ${q.choices.map(c => `<button onclick="handleAnswer('${c}' === '${q.correct}')" class="btn-shadow bg-white text-3xl font-black py-4 rounded-2xl border-2 border-purple-100">${c}</button>`).join('')}
+                    </div>`;
+            } else if (q.type === 2) {
+                content = `
+                    <div class="w-16 h-16 bg-blue-400 rounded-full flex items-center justify-center mb-4"><span class="text-3xl text-white">💡</span></div>
+                    <h3 class="text-lg font-bold text-blue-800 mb-6 text-center bg-blue-100 p-4 rounded-2xl">"${q.riddle}"</h3>
+                    <div class="grid grid-cols-2 gap-3 w-full">
+                        ${q.choices.map(c => `<button onclick="handleAnswer('${c.name}' === '${q.answerObj.name}')" class="btn-shadow bg-white text-4xl p-4 rounded-2xl">${c.emoji}</button>`).join('')}
+                    </div>`;
+            } else if (q.type === 3) {
+                content = `
+                    <h2 class="text-4xl font-black text-gray-800 mb-8 uppercase tracking-widest">${q.correct}</h2>
+                    <h3 class="text-lg font-bold text-gray-500 mb-6">Which picture is it?</h3>
+                    <div class="grid grid-cols-2 gap-3 w-full">
+                        ${q.choices.map(c => `<button onclick="handleAnswer('${c.name}' === '${q.answerObj.name}')" class="btn-shadow bg-white text-4xl p-4 rounded-2xl">${c.emoji}</button>`).join('')}
+                    </div>`;
+            } else if (q.type === 4) {
+                content = `
+                    <button onclick="playAudio('${q.soundUrl}')" class="w-20 h-20 bg-teal-400 rounded-full flex items-center justify-center btn-shadow mb-6"><span class="text-4xl text-white">🎵</span></button>
+                    <h3 class="text-xl font-black text-teal-800 mb-6">What sound is this?</h3>
+                    <div class="grid grid-cols-2 gap-3 w-full">
+                        ${q.choices.map(c => `<button onclick="handleAnswer('${c.name}' === '${q.answerObj.name}')" class="btn-shadow bg-white text-4xl p-4 rounded-2xl">${c.emoji}</button>`).join('')}
+                    </div>`;
+            }
+            return content;
+        }
+
+        // --- EVENT HANDLERS ---
+        function changeView(v) {
+            state.view = v;
+            state.feedback = null;
+            render();
+        }
+
+        function setCategoryMenu() {
+            state.view = 'category_select';
+            render();
+        }
+
+        function startGame(gId, cat = null) {
+            state.gameId = gId;
+            state.category = cat;
+            state.round = 1;
+            state.score = 0;
+            state.currentQuiz = null;
+            state.feedback = null;
+            state.view = 'playing';
+            render();
+        }
+
+        function generateQuiz() {
+            let q = {};
+            if (state.gameId === 1) {
+                const pool = MG1_DATA[state.category];
+                const ans = pool[Math.floor(Math.random() * pool.length)];
+                const correct = ans.name[0].toUpperCase();
+                const wrong = shuffle(ALPHABETS.filter(a => a !== correct)).slice(0, 7);
+                q = { type: 1, answerObj: ans, correct: correct, choices: shuffle([correct, ...wrong]) };
+            } else if (state.gameId === 2) {
+                const ans = MG2_DATA[Math.floor(Math.random() * MG2_DATA.length)];
+                const otherOptions = shuffle(MG2_DATA.filter(a => a.name !== ans.name)).slice(0, 7);
+                q = { type: 2, answerObj: ans, riddle: ans.riddle, choices: shuffle([ans, ...otherOptions]) };
+            } else if (state.gameId === 3) {
+                const ans = MG3_DATA[Math.floor(Math.random() * MG3_DATA.length)];
+                const otherOptions = shuffle(MG3_DATA.filter(a => a.name !== ans.name)).slice(0, 7);
+                q = { type: 3, answerObj: ans, correct: ans.name, choices: shuffle([ans, ...otherOptions]) };
+            } else if (state.gameId === 4) {
+                const ans = MG4_DATA[Math.floor(Math.random() * MG4_DATA.length)];
+                const otherOptions = shuffle(MG4_DATA.filter(a => a.name !== ans.name)).slice(0, 7);
+                q = { type: 4, answerObj: ans, soundUrl: ans.sound, choices: shuffle([ans, ...otherOptions]) };
+            }
+            state.currentQuiz = q;
+            render();
+        }
+
+        function handleAnswer(isCorrect) {
+            if (isCorrect) {
+                state.score++;
+                state.feedback = { type: 'correct', msg: "Excellent!", answer: state.currentQuiz.answerObj.name };
+                playAudio(AUDIO_ASSETS.correct);
+                if (window.confetti) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            } else {
+                state.feedback = { type: 'wrong', msg: "Oops! Try Again", answer: state.currentQuiz.answerObj.name };
+                playAudio(AUDIO_ASSETS.wrong);
+            }
+            render();
+
+            setTimeout(() => {
+                if (state.round >= MAX_ROUNDS) {
+                    state.view = 'result';
+                    if (state.score === MAX_ROUNDS) playAudio(AUDIO_ASSETS.fanfare);
+                } else {
+                    state.round++;
+                    state.currentQuiz = null;
+                }
+                state.feedback = null;
+                render();
+            }, 2500);
+        }
+
+        // Initial render
+        window.onload = render;
+    </script>
+</body>
+</html>
